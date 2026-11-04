@@ -1,0 +1,68 @@
+# IDE / editor
+.idea/
+.vscode/
+*.iml
+*.code-workspace
+
+# OS
+.DS_Store
+._*
+Thumbs.db
+
+# Node
+node_modules/
+
+# Local env
+.env
+.env.local
+
+# Terraform
+**/.terraform/
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+crash.log
+crash.*.log
+
+# .NET / C#
+**/bin/
+**/obj/
+*.user
+*.suo
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+syndicate_venv/
+
+# AWS / Syndicate
+.aws/
+.aws-sam/
+.syndicate/
+syndicate.yaml
+syndicate.yml
+credentials
+credentials.json
+
+# Secrets
+.env.*
+!.env.example
+*.pem
+*.key
+*.p12
+*.pfx
+
+# Terraform
+*.tfplan
+*.tfstate.backup
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
+
+# Build outputs
+**/dist/
+**/coverage/

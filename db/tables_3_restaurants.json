@@ -1,0 +1,184 @@
+{
+  "Tables": [
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "d285270a-df38-417a-a407-f150162fc36f"
+          },
+          "locationId": {
+            "S": "7d598da3-0887-4a04-a3a1-fe26d8a4a4f2"
+          },
+          "capacity": {
+            "N": "2"
+          },
+          "tableNumber": {
+            "N": "1"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "928f0711-4033-4b94-9630-784eadcdadc1"
+          },
+          "locationId": {
+            "S": "7d598da3-0887-4a04-a3a1-fe26d8a4a4f2"
+          },
+          "capacity": {
+            "N": "4"
+          },
+          "tableNumber": {
+            "N": "2"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "5342dd81-835f-4478-a25e-84b9c61d8c7e"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "2"
+          },
+          "tableNumber": {
+            "N": "1"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "ddf18839-9bc9-4a7d-976f-5f047cddafdc"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "2"
+          },
+          "tableNumber": {
+            "N": "2"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "9382538f-4cb9-4bc5-b8f5-121660863ddb"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "4"
+          },
+          "tableNumber": {
+            "N": "3"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "daac6de7-4af3-4349-a6a0-88495bc69a68"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "4"
+          },
+          "tableNumber": {
+            "N": "4"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "ae864d21-e19e-4bcd-82cb-1a6040d81a89"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "6"
+          },
+          "tableNumber": {
+            "N": "5"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "c2a8bd4d-0892-47f6-839d-2a93496be20e"
+          },
+          "locationId": {
+            "S": "2de08053-9bec-4662-bf56-2ccb70aeeb78"
+          },
+          "capacity": {
+            "N": "6"
+          },
+          "tableNumber": {
+            "N": "6"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "bcf9e520-5dee-416e-b356-d68e3c2cbb05"
+          },
+          "locationId": {
+            "S": "98c4acc4-ca8b-4416-be9d-ef40f1e73e0a"
+          },
+          "capacity": {
+            "N": "2"
+          },
+          "tableNumber": {
+            "N": "1"
+          }
+        }
+      }
+    },
+    {
+      "PutRequest": {
+        "Item": {
+          "id": {
+            "S": "cd0e535a-aa59-4723-a2a8-711eb5fbfa1f"
+          },
+          "locationId": {
+            "S": "98c4acc4-ca8b-4416-be9d-ef40f1e73e0a"
+          },
+          "capacity": {
+            "N": "4"
+          },
+          "tableNumber": {
+            "N": "2"
+          }
+        }
+      }
+    }
+  ]
+}
