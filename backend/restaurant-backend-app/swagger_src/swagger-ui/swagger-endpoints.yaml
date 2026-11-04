@@ -466,7 +466,7 @@ paths:
       tags:
         - Guest Sessions
       summary: Delete guest session
-      description: Deletes a guest session from a group reservation
+      description: Deletes a guest session from a group reservation. Only the reservation Owner may call this endpoint; the Owner session cannot be deleted.
       operationId: deleteGuestSession
       parameters:
         - name: groupReservationId
@@ -485,14 +485,13 @@ paths:
         - bearerAuth: []
       responses:
         '200':
-          description: Guest session deleted successfully
+          description: Guest session deleted successfully. Returns the updated group snapshot.
           content:
             application/json:
               schema:
-                type: object
-                description: Updated snapshot of the group reservation
+                $ref: '#/components/schemas/GetAllSessionsResponse'
         '400':
-          description: Invalid request - missing required path parameters
+          description: Invalid request, or the guest session belongs to another group reservation
           content:
             application/json:
               schema:
@@ -505,6 +504,12 @@ paths:
                 $ref: '#/components/schemas/ErrorResponse'
         '404':
           description: Group reservation or guest session not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '403':
+          description: Caller is not the reservation Owner
           content:
             application/json:
               schema:

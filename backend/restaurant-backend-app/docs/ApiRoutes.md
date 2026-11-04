@@ -1243,6 +1243,26 @@ Only the reservation Owner may call this endpoint. A non-Owner receives `403 For
 Response: 200 OK
 ```json
 {
-  "message": "Guest session removed from group successfully."
+  "participants": [
+    {
+      "id": "session2",
+      "type": "Guest",
+      "name": "Olena",
+      "items": [
+        {
+          "dish": {
+            "id": "dish2",
+            "name": "Tom Yum",
+            "price": 220
+          },
+          "quantity": 1
+        }
+      ],
+      "total": 220,
+      "isSubmitted": false
+    }
+  ],
+  "total": 220
 }
 ```
+Only the reservation Owner may call this endpoint; a non-Owner receives `403 Forbidden`. A missing guest session returns `404 Not Found`, and a session belonging to another group reservation returns `400 Bad Request`. The response contains the remaining participants and recalculated group total.

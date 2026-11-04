@@ -186,10 +186,18 @@ public class GuestSessionService(
             throw new ValidationException("Guest session does not belong to this group reservation.");
         }
 
+        if (session.IsOwnerSession)
+        {
+            throw new ValidationException("Owner sessions cannot be deleted.");
+        }
+
         await guestSessionRepository.DeleteAsync(session);
 
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
-        return await BuildSessionsSnapshotAsync(sessions, reservation);
+        var remainingSessions = sessions
+            .Where(remainingSession => remainingSession.Id != guestSessionId)
+            .ToList();
+        return await BuildSessionsSnapshotAsync(remainingSessions, reservation);
     }
 
     public async Task<GetAllSessionsResponse> GetAllSessionsForOwnerAsync(string userId, string groupReservationId)
