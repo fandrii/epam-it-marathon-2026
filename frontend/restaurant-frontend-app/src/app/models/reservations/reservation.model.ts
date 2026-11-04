@@ -17,6 +17,7 @@ export interface Reservation {
   preOrder?: Order;
   preOrders?: Order[];
   guestInviteLinkAvailable?: boolean;
+  hasGroupReservation?: boolean;
 }
 
 export enum ReservationStatus {
@@ -40,6 +41,7 @@ export interface ReservationCustomer {
   customerId?: string;
   waiterId: string;
   hasSubmittedPreOrder?: boolean;
+  hasGroupReservation?: boolean;
   preOrder?: Order;
   preOrders?: Order[];
   createdByName?: string;

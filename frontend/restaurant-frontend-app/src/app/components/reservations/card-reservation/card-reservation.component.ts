@@ -136,6 +136,10 @@ export class CardReservationComponent {
     );
   });
 
+  readonly canViewGroupPreOrder = computed(
+    () => this.role() === Roles.CUSTOMER && this.r().hasGroupReservation === true
+  );
+
   readonly isAnonymous = computed(() => {
     return !this.r().customerId;
   });
@@ -173,6 +177,19 @@ export class CardReservationComponent {
       queryParams,
     });
   }
+
+  onViewGroupPreOrder(): void {
+    if (!this.canViewGroupPreOrder()) {
+      return;
+    }
+
+    void this.router.navigate([
+      '/reservations',
+      this.r().id,
+      'group-pre-order',
+    ]);
+  }
+
   onPreOrderWaiter(): void {
     if (this.preOrderItemCount() > 0) {
       this.navigateToWaiterPreOrder();

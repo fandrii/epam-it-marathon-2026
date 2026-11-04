@@ -208,7 +208,7 @@ public class GuestSessionService(
         return await BuildSessionsSnapshotAsync(sessions, reservation);
     }
 
-    public async Task<string> GetOwnerGuestSessionIdAsync(string userId, string reservationId)
+    public async Task<GetOwnerGuestSessionIdResponse> GetOwnerGuestSessionIdAsync(string userId, string reservationId)
     {
         Reservation reservation = await reservationRepository.GetReservationByIdAsync(reservationId)
             ?? throw new ReservationNotFoundException($"Reservation {reservationId} was not found.");
@@ -227,7 +227,7 @@ public class GuestSessionService(
             ownerSession.IsOwnerSession &&
             string.Equals(ownerSession.OwnerUserId, userId, StringComparison.Ordinal))
         {
-            return ownerSession.Id;
+            return new GetOwnerGuestSessionIdResponse(ownerSession.Id, group.GroupReservationId);
         }
 
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(group.GroupReservationId);
@@ -235,8 +235,9 @@ public class GuestSessionService(
             session.IsOwnerSession &&
             string.Equals(session.OwnerUserId, userId, StringComparison.Ordinal));
 
-        return ownerSession?.Id
-            ?? throw new GuestSessionNotFoundException("Owner guest session was not found.");
+        return ownerSession is not null
+            ? new GetOwnerGuestSessionIdResponse(ownerSession.Id, group.GroupReservationId)
+            : throw new GuestSessionNotFoundException("Owner guest session was not found.");
     }
 
     public async Task<List<ConsolidatedOrderItemResponse>> SubmitGroupPreOrderAsync(

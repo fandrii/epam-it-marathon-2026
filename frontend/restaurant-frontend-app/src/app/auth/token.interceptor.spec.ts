@@ -60,4 +60,19 @@ describe('tokenInterceptor', () => {
     expect(toastService.error).not.toHaveBeenCalled();
     expect(receivedStatus).toBe(400);
   });
+
+  it('honors SKIP_ERROR_TOAST for authenticated guest-group requests', () => {
+    let receivedStatus: number | undefined;
+    const url = 'https://test.api/guest/groups/group-1/sessions';
+    http
+      .get(url, { context: new HttpContext().set(SKIP_ERROR_TOAST, true) })
+      .subscribe({ error: (error) => (receivedStatus = error.status) });
+
+    httpMock
+      .expectOne(url)
+      .flush({ message: 'Not the group owner.' }, { status: 403, statusText: 'Forbidden' });
+
+    expect(toastService.error).not.toHaveBeenCalled();
+    expect(receivedStatus).toBe(403);
+  });
 });

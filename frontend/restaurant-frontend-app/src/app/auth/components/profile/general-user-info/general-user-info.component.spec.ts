@@ -48,8 +48,15 @@ describe('GeneralInformationComponent', () => {
   let readers: FileReader[];
   let images: HTMLImageElement[];
 
-  let readerResults: WeakMap<FileReader, string>;
-  let readerStates: WeakMap<FileReader, FileReader['readyState']>;
+  let readerResults: WeakMap<object, string>;
+  let readerStates: WeakMap<object, FileReader['readyState']>;
+  const nativeFileReaderDescriptor = Object.getOwnPropertyDescriptor(window, 'FileReader');
+
+  afterEach(() => {
+    if (nativeFileReaderDescriptor) {
+      Object.defineProperty(window, 'FileReader', nativeFileReaderDescriptor);
+    }
+  });
 
   beforeEach(async () => {
     auth = {
@@ -80,30 +87,40 @@ describe('GeneralInformationComponent', () => {
     readerResults = new WeakMap();
     readerStates = new WeakMap();
 
-    // Control callbacks without reading or decoding real files.
-    spyOnProperty(FileReader.prototype, 'result', 'get')
+    readSpy = jasmine.createSpy('readAsDataURL')
       .and.callFake(function (this: FileReader) {
-      return readerResults.get(this) ?? null;
-    });
+        readers.push(this);
+        readerStates.set(this, FileReader.LOADING);
+      });
 
-    spyOnProperty(FileReader.prototype, 'readyState', 'get')
+    abortSpy = jasmine.createSpy('abort')
       .and.callFake(function (this: FileReader) {
-      return readerStates.get(this) ?? FileReader.EMPTY;
-    });
+        readerStates.set(this, FileReader.DONE);
+      });
 
-    readSpy = spyOn(
-      FileReader.prototype,
-      'readAsDataURL',
-    ).and.callFake(function (this: FileReader) {
-      readers.push(this);
-      readerStates.set(this, FileReader.LOADING);
-    });
+    class FakeFileReader {
+      static readonly EMPTY = 0;
+      static readonly LOADING = 1;
+      static readonly DONE = 2;
 
-    abortSpy = spyOn(
-      FileReader.prototype,
-      'abort',
-    ).and.callFake(function (this: FileReader) {
-      readerStates.set(this, FileReader.DONE);
+      onload: FileReader['onload'] = null;
+      onerror: FileReader['onerror'] = null;
+      readAsDataURL = readSpy;
+      abort = abortSpy;
+
+      get result(): string | null {
+        return readerResults.get(this) ?? null;
+      }
+
+      get readyState(): FileReader['readyState'] {
+        return readerStates.get(this) ?? FakeFileReader.EMPTY;
+      }
+    }
+
+    Object.defineProperty(window, 'FileReader', {
+      configurable: true,
+      writable: true,
+      value: FakeFileReader,
     });
 
     spyOnProperty(
@@ -179,16 +196,16 @@ describe('GeneralInformationComponent', () => {
       reader,
       new ProgressEvent('load') as ProgressEvent<FileReader>,
     );
+    fixture.detectChanges();
   }
 
   function completeImage(width = 200, height = 200): void {
     const image = images[images.length - 1];
 
-    spyOnProperty(image, 'naturalWidth', 'get')
-      .and.returnValue(width);
-
-    spyOnProperty(image, 'naturalHeight', 'get')
-      .and.returnValue(height);
+    Object.defineProperties(image, {
+      naturalWidth: { configurable: true, value: width },
+      naturalHeight: { configurable: true, value: height },
+    });
 
     image.onload?.call(image, new Event('load'));
   }

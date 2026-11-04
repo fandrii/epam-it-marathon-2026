@@ -13,6 +13,18 @@ describe('ReservationConfirmedComponent', () => {
 
     fixture = TestBed.createComponent(ReservationConfirmedComponent);
     component = fixture.componentInstance;
+    fixture.componentRef.setInput('reservation', {
+      id: 'reservation-1',
+      tableId: 'table-1',
+      customerId: 'customer-1',
+      startTime: new Date('2026-11-04T18:00:00Z'),
+      endTime: new Date('2026-11-04T19:00:00Z'),
+      guestCount: 2,
+      status: 0,
+      locationAddress: 'Test location',
+      tableCapacity: 4,
+      waiterId: 'waiter-1',
+    });
     fixture.detectChanges();
   });
 

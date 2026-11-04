@@ -1,0 +1,138 @@
+.group-summary {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 2rem;
+}
+
+.back-link {
+  display: inline-block;
+  margin-bottom: 1.25rem;
+}
+
+.summary-header,
+.participant-header,
+.dialog-actions,
+.grand-total {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.summary-header {
+  margin-bottom: 1.5rem;
+}
+
+.summary-header h1,
+.participant-header h2 {
+  margin: 0;
+}
+
+.summary-header p {
+  margin: 0.4rem 0 0;
+}
+
+.participants {
+  display: grid;
+  gap: 1rem;
+}
+
+.participant-card,
+.grand-total,
+.confirmation-dialog {
+  border: 1px solid #d8ded8;
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 1.25rem;
+}
+
+.submission-status {
+  display: inline-block;
+  margin-top: 0.5rem;
+  color: #8a4c00;
+  font-weight: 600;
+}
+
+.submission-status--submitted {
+  color: #26734d;
+}
+
+.table-scroll {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+th,
+td {
+  padding: 0.7rem 0.5rem;
+  border-bottom: 1px solid #e6e9e6;
+}
+
+.participant-total {
+  margin: 1rem 0 0;
+  text-align: right;
+}
+
+.grand-total {
+  margin-top: 1.25rem;
+  font-size: 1.2rem;
+}
+
+.state-message {
+  margin: 1rem 0;
+}
+
+.state-message--error {
+  color: #a32727;
+}
+
+.empty-order {
+  margin: 1rem 0 0;
+  color: #5b625b;
+}
+
+.dialog-backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  display: grid;
+  place-items: center;
+  padding: 1rem;
+  background: rgb(0 0 0 / 45%);
+}
+
+.confirmation-dialog {
+  width: min(100%, 430px);
+  box-shadow: 0 1rem 3rem rgb(0 0 0 / 20%);
+}
+
+.confirmation-dialog h2 {
+  margin-top: 0;
+}
+
+.dialog-actions {
+  justify-content: flex-end;
+  margin-top: 1.5rem;
+}
+
+@media (max-width: 600px) {
+  .group-summary {
+    padding: 1rem;
+  }
+
+  .summary-header,
+  .participant-header,
+  .grand-total {
+    align-items: flex-start;
+  }
+
+  .summary-header {
+    flex-direction: column;
+  }
+}

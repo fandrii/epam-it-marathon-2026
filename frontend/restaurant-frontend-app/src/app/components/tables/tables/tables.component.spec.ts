@@ -7,6 +7,7 @@ import { Reservation, ReservationStatus } from '@app/models/reservations/reserva
 import { ReservationService } from '@app/services/reservation/reservation.service';
 import { TableService } from '@app/services/table/table.service';
 import { ToastService } from '@app/services/toast/toast.service';
+import { LocationsService } from '@app/services/locations/locations.service';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 import { LocationResponse } from '@app/models/locations/location-response.model';
 import { Table } from '@app/models/tables/table.model';
@@ -30,12 +31,15 @@ describe('ReservationsPageComponent', () => {
   let fixture: ComponentFixture<TablesComponent>;
   let reservationService: jasmine.SpyObj<ReservationService>;
   let toastService: jasmine.SpyObj<ToastService>;
+  let locationsService: jasmine.SpyObj<LocationsService>;
 
   beforeEach(async () => {
     reservationService = jasmine.createSpyObj<ReservationService>('ReservationService', [
       'makeReservation$',
     ]);
     toastService = jasmine.createSpyObj<ToastService>('ToastService', ['error', 'success']);
+    locationsService = jasmine.createSpyObj<LocationsService>('LocationsService', ['getLocations']);
+    locationsService.getLocations.and.returnValue(of([]));
 
     await TestBed.configureTestingModule({
       providers: [
@@ -45,6 +49,7 @@ describe('ReservationsPageComponent', () => {
         { provide: API_BASE_URL, useValue: 'https://test.api' },
         { provide: ReservationService, useValue: reservationService },
         { provide: ToastService, useValue: toastService },
+        { provide: LocationsService, useValue: locationsService },
       ],
       imports: [TablesComponent],
     }).compileComponents();

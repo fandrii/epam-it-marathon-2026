@@ -1,5 +1,8 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient, HttpHeaders } from '@angular/common/http';
+import { HttpClient, HttpContext, HttpHeaders } from '@angular/common/http';
+import { defer, Observable, throwError } from 'rxjs';
+import { AuthenticationService } from '@app/auth/services/authentication.service';
+import { SKIP_ERROR_TOAST } from '@app/auth/skip-error-toast.context';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 
 export interface CreateGuestSessionRequest {
@@ -34,10 +37,71 @@ export interface GuestMenuResponse {
     dishes: Record<GuestMenuCategoryKey, GuestMenuDish[]>;
 }
 
+export interface OwnerGuestSessionInfo {
+    guestSessionId: string;
+    groupReservationId: string;
+}
+
+export interface GroupSessionDish {
+    id: string;
+    name: string;
+    price: number;
+}
+
+export interface GroupSessionItem {
+    dish: GroupSessionDish;
+    quantity: number;
+}
+
+export interface GroupSessionParticipant {
+    id: string | null;
+    type: 'Owner' | 'Guest';
+    name: string;
+    items: GroupSessionItem[];
+    total: number;
+    isSubmitted: boolean;
+}
+
+export interface GroupSessionsSnapshot {
+    participants: GroupSessionParticipant[];
+    total: number;
+}
+
 @Injectable({ providedIn: 'root' })
 export class GuestSessionsService {
     private readonly baseUrl = inject(API_BASE_URL);
     private readonly http = inject(HttpClient);
+    private readonly authenticationService = inject(AuthenticationService);
+
+    getOwnerGuestSessionInfo(reservationId: string): Observable<OwnerGuestSessionInfo> {
+        return this.ownerRequest((headers, context) =>
+            this.http.get<OwnerGuestSessionInfo>(
+                `${this.baseUrl}/reservations/${encodeURIComponent(reservationId)}/guest-session-id`,
+                { headers, context }
+            )
+        );
+    }
+
+    getGroupSessions(groupReservationId: string): Observable<GroupSessionsSnapshot> {
+        return this.ownerRequest((headers, context) =>
+            this.http.get<GroupSessionsSnapshot>(
+                `${this.baseUrl}/guest/groups/${encodeURIComponent(groupReservationId)}/sessions`,
+                { headers, context }
+            )
+        );
+    }
+
+    deleteGuestSession(
+        groupReservationId: string,
+        guestSessionId: string
+    ): Observable<GroupSessionsSnapshot> {
+        return this.ownerRequest((headers, context) =>
+            this.http.delete<GroupSessionsSnapshot>(
+                `${this.baseUrl}/guest/groups/${encodeURIComponent(groupReservationId)}/sessions/${encodeURIComponent(guestSessionId)}`,
+                { headers, context }
+            )
+        );
+    }
 
     createSession(body: CreateGuestSessionRequest) {
         return this.http.post<CreateGuestSessionResponse>(`${this.baseUrl}/guest/sessions`, body);
@@ -72,6 +136,21 @@ export class GuestSessionsService {
             {},
             { headers: this.authHeaders(sessionToken) }
         );
+    }
+
+    private ownerRequest<T>(
+        request: (headers: HttpHeaders, context: HttpContext) => Observable<T>
+    ): Observable<T> {
+        return defer(() => {
+            const idToken = this.authenticationService.getTokens()?.idToken;
+            if (!idToken) {
+                return throwError(() => new Error('An active Owner sign-in is required.'));
+            }
+
+            const headers = new HttpHeaders({ Authorization: `Bearer ${idToken}` });
+            const context = new HttpContext().set(SKIP_ERROR_TOAST, true);
+            return request(headers, context);
+        });
     }
 
     private authHeaders(token: string) {

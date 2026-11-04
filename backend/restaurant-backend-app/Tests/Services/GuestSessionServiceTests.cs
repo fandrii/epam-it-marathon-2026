@@ -1108,9 +1108,11 @@ public class GuestSessionServiceTests
             .Setup(repository => repository.GetByGuestSessionId("owner-group-1"))
             .ReturnsAsync(ownerSession);
 
-        string result = await _guestSessionService.GetOwnerGuestSessionIdAsync("owner-1", reservation.Id);
+        GetOwnerGuestSessionIdResponse result =
+            await _guestSessionService.GetOwnerGuestSessionIdAsync("owner-1", reservation.Id);
 
-        Assert.Equal(ownerSession.Id, result);
+        Assert.Equal(ownerSession.Id, result.GuestSessionId);
+        Assert.Equal(group.GroupReservationId, result.GroupReservationId);
     }
 
     [Fact]

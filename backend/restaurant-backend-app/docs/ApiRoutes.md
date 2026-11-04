@@ -462,7 +462,8 @@ Response: `201 Created`
   "waiterId": "string",
   "locationAddress": "string",
   "restaurantName": "Green & Tasty",
-  "hasSubmittedPreOrder": false
+  "hasSubmittedPreOrder": false,
+  "hasGroupReservation": true
 }
 ```
 
@@ -558,10 +559,11 @@ Response: `200 OK`
 Response: `200 OK`
 ```json
 {
-  "guestSessionId": "string"
+  "guestSessionId": "string",
+  "groupReservationId": "string"
 }
 ```
-Only the reservation Owner may retrieve this ID. The Owner guest session is created along with its group reservation. Errors: `401` if unauthenticated, `403` if the caller is not the Owner, and `404` if the reservation, group reservation, or Owner session is missing.
+Only the reservation Owner may retrieve this information. The reservation-list response includes `hasGroupReservation` so the client can show the group summary action only for group reservations. Errors: `401` if unauthenticated, `403` if the caller is not the Owner, and `404` if the reservation, group reservation, or Owner session is missing.
 
 
 ### `DELETE` /reservations

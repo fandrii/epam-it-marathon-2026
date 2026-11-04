@@ -31,6 +31,15 @@ export const routes: Routes = [
     component: ReservationConfirmedComponent,
   },
   {
+    path: 'reservations/:reservationId/group-pre-order',
+    loadComponent: () =>
+      import('./pages/group-pre-order-summary/group-pre-order-summary.component').then(
+        (m) => m.GroupPreOrderSummaryComponent
+      ),
+    canActivate: [AuthGuard],
+    data: { authorized: true },
+  },
+  {
     path: 'reservations',
     component: ReservationDashboardComponent,
     canActivate: [AuthGuard],

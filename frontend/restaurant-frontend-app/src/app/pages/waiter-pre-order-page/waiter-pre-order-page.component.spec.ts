@@ -1,6 +1,7 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { WaiterPreOrderPageComponent } from './waiter-pre-order-page.component';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
+import { provideRouter } from '@angular/router';
 
 describe('WaiterPreOrderPageComponent', () => {
   let component: WaiterPreOrderPageComponent;
@@ -8,7 +9,10 @@ describe('WaiterPreOrderPageComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      providers: [{ provide: API_BASE_URL, useValue: 'https://test.api' }],
+      providers: [
+        { provide: API_BASE_URL, useValue: 'https://test.api' },
+        provideRouter([]),
+      ],
       imports: [WaiterPreOrderPageComponent],
     }).compileComponents();
 

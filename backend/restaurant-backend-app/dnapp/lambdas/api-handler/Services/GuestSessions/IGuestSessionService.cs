@@ -16,7 +16,7 @@ public interface IGuestSessionService
     Task<GetAllSessionsResponse> GetAllSessionsForOwnerAsync(string userId, string groupReservationId);
     Task<GetAllSessionsResponse> DeleteGuestSessionAsync(string userId, string groupReservationId, string guestSessionId);
     Task CreateGroupOwnerSessionAsync(string userId, string groupReservationId);
-    Task<string> GetOwnerGuestSessionIdAsync(string userId, string reservationId);
+    Task<GetOwnerGuestSessionIdResponse> GetOwnerGuestSessionIdAsync(string userId, string reservationId);
     Task<List<ConsolidatedOrderItemResponse>> SubmitGroupPreOrderAsync(
         string userId,
         string groupReservationId,
