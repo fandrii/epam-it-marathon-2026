@@ -31,6 +31,22 @@
   flex-direction: row;
   align-items: center;
   justify-content: space-between;
+  gap: 12px;
+}
+
+.dish-image {
+  flex: 0 0 72px;
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.order-item-details {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
 }
 
 .body-bold {
@@ -47,4 +63,16 @@
   line-height: 24px;
   letter-spacing: 0;
   vertical-align: middle;
+}
+
+@media (max-width: 480px) {
+  .dish-image {
+    flex-basis: 56px;
+    width: 56px;
+    height: 56px;
+  }
+
+  .order-item {
+    gap: 8px;
+  }
 }

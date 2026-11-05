@@ -18,5 +18,6 @@ export class GuestPreorderSubmittedComponent {
     readonly items = input<GuestCartItem[]>([]);
     readonly total = input(0);
 
-    readonly createNew = output<void>();
+    readonly editOrder = output<void>();
+    readonly closeRequested = output<void>();
 }

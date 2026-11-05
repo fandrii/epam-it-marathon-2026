@@ -59,7 +59,7 @@ public class GuestSessionService(
 
         int joinedGuestsCount = await countTask;
 
-        if (joinedGuestsCount + 1 >= reservation.GuestCount)
+        if (joinedGuestsCount >= reservation.GuestCount)
             throw new GuestLimitExceededException($"Guest limit exceeded. Maximum capacity is {reservation.GuestCount}, but {joinedGuestsCount} guests have already joined.");
 
         byte[] tokenBytes = RandomNumberGenerator.GetBytes(32);
@@ -439,9 +439,9 @@ public class GuestSessionService(
     {
         var sessions = await guestSessionRepository.GetAllByGroupReservationIdAsync(groupReservationId);
 
-        // Owner is always 1 active participant. 
-        // If sessions is null/empty, it safely evaluates to 0 joined guests + 1 owner = 1.
-        return (sessions?.Count ?? 0) + 1;
+        // The owner session is always present for a group reservation, but capacity and participant totals
+        // should count only actual guest sessions plus the owner itself.
+        return sessions.Count(session => !session.IsOwnerSession) + 1;
     }
 
     private async Task ValidateGroupReservationId(string groupReservationId) => await GetGroupReservationAndValidateAsync(groupReservationId);

@@ -1,7 +1,9 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
 import { Table } from '@app/models/tables/table.model';
 import { EditReservationModalComponent } from './edit-reservation-modal.component';
 import { ReservationDraftChanges } from './models';
+import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 
 const localIso = (hours: number, minutes = 0): string =>
   new Date(2026, 9, 17, hours, minutes).toISOString();
@@ -38,7 +40,8 @@ describe('EditReservationModalComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [EditReservationModalComponent],
+      imports: [EditReservationModalComponent, HttpClientTestingModule],
+      providers: [{ provide: API_BASE_URL, useValue: 'https://test.api' }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(EditReservationModalComponent);

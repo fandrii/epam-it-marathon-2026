@@ -46,6 +46,7 @@ export interface GroupSessionDish {
     id: string;
     name: string;
     price: number;
+    imageUrl?: string | null;
 }
 
 export interface GroupSessionItem {
@@ -65,6 +66,25 @@ export interface GroupSessionParticipant {
 export interface GroupSessionsSnapshot {
     participants: GroupSessionParticipant[];
     total: number;
+}
+
+export interface GuestSessionDishSummary {
+    id: string;
+    name: string;
+    price: number;
+    imageUrl?: string | null;
+}
+
+export interface GuestSessionLineItem {
+    dish: GuestSessionDishSummary;
+    quantity: number;
+}
+
+export interface GuestSessionSummary {
+    name: string;
+    items: GuestSessionLineItem[];
+    total: number;
+    isSubmitted: boolean;
 }
 
 @Injectable({ providedIn: 'root' })
@@ -88,6 +108,13 @@ export class GuestSessionsService {
                 `${this.baseUrl}/guest/groups/${encodeURIComponent(groupReservationId)}/sessions`,
                 { headers, context }
             )
+        );
+    }
+
+    getGuestSession(guestSessionId: string, sessionToken: string): Observable<GuestSessionSummary> {
+        return this.http.get<GuestSessionSummary>(
+            `${this.baseUrl}/guest/sessions/${encodeURIComponent(guestSessionId)}`,
+            { headers: this.authHeaders(sessionToken) }
         );
     }
 

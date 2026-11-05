@@ -90,6 +90,11 @@ export class GuestPreOrderPageComponent {
         if (token) void this.store.loadInviteByToken(token);
     }
 
+    closeSubmittedOrder(): void {
+        this.store.status.set('active');
+        void this.router.navigate(['/main']);
+    }
+
     selectCategory(category: string | null): void {
         this.selectedCategory.set(category);
     }

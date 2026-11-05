@@ -7,40 +7,47 @@
 
     @for (item of order().orderItems; track item.dish.id) {
     <div class="order-item">
-      <span class="body">
-    {{ item.quantity }}× {{ item.dish.name }}
+      <img
+        class="dish-image"
+        [src]="item.dish.imageUrl || 'assets/img/dish.png'"
+        appDishImageFallback
+        [alt]="item.dish.name"
+        width="72"
+        height="72"
+      />
 
-    @switch (item.state) {
-    @case (0) {
-    <span class="body status-pending">
-      (Pending)
-    </span>
-    }
+      <div class="order-item-details">
+        <span class="body">
+          {{ item.quantity }}× {{ item.dish.name }}
 
-    @case (1) {
-    <span class="body status-confirmed">
-      (Confirmed)
-    </span>
-    }
+          @switch (item.state) {
+            @case (0) {
+              <span class="body status-pending">(Pending)</span>
+            }
 
-    @case (2) {
-    <span class="body status-rejected">
-      (Rejected)
-    </span>
-    }
+            @case (1) {
+              <span class="body status-confirmed">(Confirmed)</span>
+            }
 
-    @default {
-    <span class="body status-unknown">
-      (Unknown)
-    </span>
-    }
-    }
-    </span>
+            @case (2) {
+              <span class="body status-rejected">(Rejected)</span>
+            }
 
-    <span class="body-bold">
-    {{ item.dish.price * item.quantity | currency }}
-    </span>
-  </div>
+            @default {
+              <span class="body status-unknown">(Unknown)</span>
+            }
+          }
+        </span>
+
+        <span class="body">
+          Unit price: {{ item.dish.price | currency }}
+        </span>
+      </div>
+
+      <span class="body-bold">
+        {{ item.dish.price * item.quantity | currency }}
+      </span>
+    </div>
     }
 
     <div class="order-item">
@@ -53,6 +60,7 @@
     <button
       type="button"
       class="button button--secondary button--large"
+      [disabled]="busy()"
       (click)="cancelOrder()"
     >
       Cancel Pre-order
@@ -61,6 +69,7 @@
     <button
       type="button"
       class="button button--primary button--large"
+      [disabled]="busy()"
       (click)="editOrder()"
     >
       Edit Pre-order

@@ -126,9 +126,21 @@
     <button
       type="button"
       class="button button--secondary button--large"
+      [attr.data-group-pre-order-trigger]="r().id"
       (click)="onViewGroupPreOrder()"
     >
       View Group Pre-Order
+    </button>
+  }
+
+  @if (canViewOwnerPreOrder()) {
+    <button
+      type="button"
+      class="button button--secondary button--large"
+      [attr.data-owner-pre-order-trigger]="r().id"
+      (click)="onViewOwnerPreOrder()"
+    >
+      View Owner Pre-Order
     </button>
   }
 

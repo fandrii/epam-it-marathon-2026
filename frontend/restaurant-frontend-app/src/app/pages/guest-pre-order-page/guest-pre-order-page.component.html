@@ -1,6 +1,12 @@
 @if (store.status() === 'submitted') {
-<app-guest-preorder-submitted [items]="store.cartItems()" [total]="store.total()" [guestName]="store.guestName()"
-    [invite]="store.invite()" (createNew)="store.createNewPreorder()" />
+<app-guest-preorder-submitted
+    [items]="store.cartItems()"
+    [total]="store.total()"
+    [guestName]="store.guestName()"
+    [invite]="store.invite()"
+    (editOrder)="store.reopenSubmittedPreorder()"
+    (closeRequested)="closeSubmittedOrder()"
+/>
 } @else {
 @if (store.inviteError() === 'retryable') {
 <section class="invite-retry" role="alert">

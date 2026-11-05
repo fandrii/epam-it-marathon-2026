@@ -40,7 +40,7 @@ public class GroupReservationService(
         Reservation reservation = await reservationTask ?? throw new ValidationException("Associated reservation not found.");
         int joinedGuestsCount = await countTask;
 
-        if (joinedGuestsCount + 1 >= reservation.GuestCount)
+        if (joinedGuestsCount >= reservation.GuestCount)
             throw new GuestLimitExceededException();
 
         Table table = await tableRepository.GetTableAsync(reservation.TableId)

@@ -12,16 +12,86 @@ namespace APIHandler.Helpers;
 
 public static class ResponseBuilder
 {
-    private static readonly Dictionary<string, string> DefaultHeaders = new()
+    private const string ProductionFrontendOrigin = "https://d2i0c1cgpzhx0k.cloudfront.net";
+
+    private static readonly string[] AllowedOrigins =
+    [
+        ProductionFrontendOrigin,
+        "http://localhost:4200",
+        "https://localhost:4200",
+        "http://localhost:3000",
+        "https://localhost:3000"
+    ];
+
+    public static APIGatewayProxyResponse ApplyCorsHeaders(APIGatewayProxyResponse response, APIGatewayProxyRequest request)
     {
-        { "Content-Type", "application/json" },
-        { "Access-Control-Allow-Origin", "*" },
-        { "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS" },
-        { "Access-Control-Allow-Headers", "Content-Type, Authorization" }
-    };
+        var originHeader = request?.Headers is not null && request.Headers.TryGetValue("Origin", out var origin)
+            ? origin
+            : request?.Headers is not null && request.Headers.TryGetValue("origin", out origin)
+                ? origin
+                : null;
+
+        var headers = response.Headers ?? new Dictionary<string, string>();
+        var resolvedOrigin = ResolveOrigin(originHeader);
+
+        if (!string.IsNullOrWhiteSpace(resolvedOrigin))
+        {
+            headers["Access-Control-Allow-Origin"] = resolvedOrigin;
+            headers["Access-Control-Allow-Methods"] = "GET, POST, PUT, DELETE, PATCH, OPTIONS";
+            headers["Access-Control-Allow-Headers"] = "Content-Type, Authorization, X-Requested-With";
+            headers["Vary"] = "Origin";
+        }
+
+        if (!headers.ContainsKey("Content-Type"))
+        {
+            headers["Content-Type"] = "application/json";
+        }
+
+        response.Headers = headers;
+        return response;
+    }
+
+    private static Dictionary<string, string> BuildHeaders(string? requestOrigin = null)
+    {
+        var origin = ResolveOrigin(requestOrigin);
+        var headers = new Dictionary<string, string>
+        {
+            { "Content-Type", "application/json" },
+            { "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, PATCH, OPTIONS" },
+            { "Access-Control-Allow-Headers", "Content-Type, Authorization, X-Requested-With" }
+        };
+
+        if (!string.IsNullOrWhiteSpace(origin))
+        {
+            headers["Access-Control-Allow-Origin"] = origin;
+            headers["Vary"] = "Origin";
+        }
+
+        return headers;
+    }
+
+    private static string? ResolveOrigin(string? requestOrigin)
+    {
+        if (string.IsNullOrWhiteSpace(requestOrigin))
+        {
+            return ProductionFrontendOrigin;
+        }
+
+        var normalizedOrigin = requestOrigin.Trim();
+
+        foreach (var allowedOrigin in AllowedOrigins)
+        {
+            if (string.Equals(normalizedOrigin, allowedOrigin, StringComparison.OrdinalIgnoreCase))
+            {
+                return allowedOrigin;
+            }
+        }
+
+        return null;
+    }
 
     public static APIGatewayProxyResponse CreateErrorResponse(
-        int statusCode, string errorMessage, ILambdaLogger logger, Exception? ex = null)
+        int statusCode, string errorMessage, ILambdaLogger logger, Exception? ex = null, string? requestOrigin = null)
     {
         logger.LogLine($"[ERROR] {errorMessage}");
 
@@ -34,12 +104,11 @@ public static class ResponseBuilder
         {
             StatusCode = statusCode,
             Body = JsonSerializer.Serialize(new { error = errorMessage }),
-            Headers = DefaultHeaders,
+            Headers = BuildHeaders(requestOrigin),
         };
     }
 
-
-    public static APIGatewayProxyResponse CreateErrorCodeResponse(ValidationException exception)
+    public static APIGatewayProxyResponse CreateErrorCodeResponse(ValidationException exception, string? requestOrigin = null)
         => CreateJsonResponse(400, new ErrorCodeResponse(exception.Message, exception switch
         {
             GroupReservationExpiredException => ErrorCode.GroupReservationExpired,
@@ -47,38 +116,38 @@ public static class ResponseBuilder
             GroupReservationSubmittedException => ErrorCode.GroupReservationSubmitted,
             GuestSessionExpiredException => ErrorCode.GuestSessionExpired,
             _ => ErrorCode.Unknown
-        }));
+        }), requestOrigin);
 
-    public static APIGatewayProxyResponse CreateSuccessResponse(string message)
+    public static APIGatewayProxyResponse CreateSuccessResponse(string message, string? requestOrigin = null)
     {
         return new APIGatewayProxyResponse
         {
             StatusCode = 200,
             Body = JsonSerializer.Serialize(new { message = message }),
-            Headers = DefaultHeaders,
+            Headers = BuildHeaders(requestOrigin),
         };
     }
 
-    public static APIGatewayProxyResponse CreateOptionsResponse()
+    public static APIGatewayProxyResponse CreateOptionsResponse(string? requestOrigin = null)
     {
         return new APIGatewayProxyResponse
         {
             StatusCode = 200,
-            Headers = DefaultHeaders,
+            Headers = BuildHeaders(requestOrigin),
         };
     }
 
-    public static APIGatewayProxyResponse CreateSuccessResponse(object body, int statusCode = 200)
+    public static APIGatewayProxyResponse CreateSuccessResponse(object body, int statusCode = 200, string? requestOrigin = null)
     {
         return new APIGatewayProxyResponse
         {
             StatusCode = statusCode,
             Body = JsonSerializer.Serialize(body),
-            Headers = DefaultHeaders,
+            Headers = BuildHeaders(requestOrigin),
         };
     }
 
-    public static APIGatewayProxyResponse CreateJsonResponse(int statusCode, object body)
+    public static APIGatewayProxyResponse CreateJsonResponse(int statusCode, object body, string? requestOrigin = null)
     {
         var options = new JsonSerializerOptions
         {
@@ -90,46 +159,43 @@ public static class ResponseBuilder
         {
             StatusCode = statusCode,
             Body = JsonSerializer.Serialize(body, options),
-            Headers = DefaultHeaders
+            Headers = BuildHeaders(requestOrigin)
         };
     }
 
-    public static APIGatewayProxyResponse CreatePlainTextResponse(int statusCode, string message)
+    public static APIGatewayProxyResponse CreatePlainTextResponse(int statusCode, string message, string? requestOrigin = null)
     {
+        var headers = BuildHeaders(requestOrigin);
+        headers["Content-Type"] = "text/plain";
+
         return new APIGatewayProxyResponse
         {
             StatusCode = statusCode,
             Body = message,
-            Headers = new Dictionary<string, string>
-            {
-                { "Content-Type", "text/plain" },
-                { "Access-Control-Allow-Origin", "*" }
-            }
+            Headers = headers
         };
     }
 
     public static APIGatewayProxyResponse CreateFileResponse(
         byte[] fileContent,
         string fileName,
-        string contentType)
+        string contentType,
+        string? requestOrigin = null)
     {
         bool isTextFormat = contentType.StartsWith("text/") || contentType == "application/json";
+
+        var headers = BuildHeaders(requestOrigin);
+        headers["Content-Type"] = contentType;
+        headers["Content-Disposition"] = $"attachment; filename=\"{fileName}\"";
 
         return new APIGatewayProxyResponse
         {
             StatusCode = 200,
-            IsBase64Encoded = !isTextFormat, // true: pdf, excel, false: csv
+            IsBase64Encoded = !isTextFormat,
             Body = isTextFormat
                 ? Encoding.UTF8.GetString(fileContent)
                 : Convert.ToBase64String(fileContent),
-            Headers = new Dictionary<string, string>
-            {
-                { "Content-Type", contentType },
-                { "Content-Disposition", $"attachment; filename=\"{fileName}\"" },
-                { "Access-Control-Allow-Origin", "*" },
-                { "Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS" },
-                { "Access-Control-Allow-Headers", "Content-Type, Authorization" }
-            }
+            Headers = headers
         };
     }
 }

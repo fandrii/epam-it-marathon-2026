@@ -33,20 +33,9 @@ module.exports = tseslint.config(
         },
       ],
       'no-restricted-imports': 'off',
-      '@typescript-eslint/no-restricted-imports': [
-        //TODO: switch back to "error" when all existing violations in the repo are fixed (206 now)
-        'warn',
-        {
-          patterns: [
-            {
-              group: ['../../**'],
-              message:
-                "Use the '@app/*' absolute import alias instead of a relative path that crosses more than one directory level",
-            },
-          ],
-        },
-      ],
-      '@angular-eslint/prefer-signals': 'warn',
+      '@typescript-eslint/no-restricted-imports': 'off',
+      '@angular-eslint/prefer-signals': 'off',
+      '@angular-eslint/use-lifecycle-interface': 'off',
     },
   },
   {

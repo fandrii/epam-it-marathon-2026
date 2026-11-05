@@ -770,6 +770,39 @@ public class ReservationServiceTests
 
     [Theory]
     [AutoData]
+    public async Task UpdateReservationAsync_WhenRegularReservationBecomesGroup_ShouldCreateGroupForExistingOwner(string userId, Reservation reservation)
+    {
+        reservation.CustomerId = userId;
+        reservation.GuestCount = 3;
+        reservation.Status = ReservationStatus.Reserved;
+
+        var result = await _reservationService.UpdateReservationAsync(reservation);
+
+        Assert.True(result);
+        _mockReservationRepository.Verify(repository => repository.SaveReservationAsync(reservation), Times.Once);
+        _mockGroupReservationService.Verify(
+            service => service.CreateGroupReservationIfDoesNotExistAsync(userId, reservation.Id),
+            Times.Once);
+    }
+
+    [Theory]
+    [AutoData]
+    public async Task UpdateReservationAsync_WhenExistingGroupIsEdited_ReusesExistingGroup(string userId, Reservation reservation)
+    {
+        reservation.CustomerId = userId;
+        reservation.GuestCount = 4;
+        reservation.Status = ReservationStatus.Reserved;
+
+        var result = await _reservationService.UpdateReservationAsync(reservation);
+
+        Assert.True(result);
+        _mockGroupReservationService.Verify(
+            service => service.CreateGroupReservationIfDoesNotExistAsync(userId, reservation.Id),
+            Times.Once);
+    }
+
+    [Theory]
+    [AutoData]
     public async Task UpdateReservationAsync_WhenOneGuest_ShouldNotCreateGroupReservation(string userId, Reservation reservation)
     {
         reservation.CustomerId = userId;

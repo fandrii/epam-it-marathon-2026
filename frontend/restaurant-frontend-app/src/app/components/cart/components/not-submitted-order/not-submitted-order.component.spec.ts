@@ -60,4 +60,45 @@ describe('NotSubmittedOrderComponent', () => {
   it('should calculate the total price', () => {
     expect(component.totalPrice()).toBe(20);
   });
+
+  it('displays the dish image and falls back only after an image fails to load', () => {
+    const imageOrder = {
+      ...order,
+      orderItems: [
+        {
+          ...order.orderItems[0],
+          dish: {
+            ...order.orderItems[0].dish,
+            name: 'Test dish',
+            imageUrl: 'https://images.example.test/dish-1.jpg',
+          },
+        },
+      ],
+    } as Order;
+    fixture.componentRef.setInput('order', imageOrder);
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector('.dish-image') as HTMLImageElement;
+    expect(image.getAttribute('src')).toBe('https://images.example.test/dish-1.jpg');
+
+    image.dispatchEvent(new Event('error'));
+    expect(image.getAttribute('src')).toBe('assets/img/dish.png');
+  });
+
+  it('uses the fallback image when a dish has no image URL', () => {
+    const imageOrder = {
+      ...order,
+      orderItems: [
+        {
+          ...order.orderItems[0],
+          dish: { ...order.orderItems[0].dish, imageUrl: '' },
+        },
+      ],
+    } as Order;
+    fixture.componentRef.setInput('order', imageOrder);
+    fixture.detectChanges();
+
+    const image = fixture.nativeElement.querySelector('.dish-image') as HTMLImageElement;
+    expect(image.getAttribute('src')).toBe('assets/img/dish.png');
+  });
 });

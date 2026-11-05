@@ -47,10 +47,11 @@
           track item.orderId
           ) {
           <app-not-submitted-order
-            [order]="item"
-            (submitted)="submitOrder($event)"
-            (removeDish)="
-              removeDishFromOrder(item.orderId, $event)
+                [order]="item"
+                [busy]="isOrderBusy(item.orderId)"
+                (submitted)="submitOrder($event)"
+                (removeDish)="
+                  removeDishFromOrder(item.orderId, $event)
             "
             (addDish)="addDishToOrder(item.orderId)"
             (updateQuantity)="
@@ -65,33 +66,53 @@
       </div>
     }
 
+    @if (loadingOrders() && orders().length === 0) {
+      <p class="body" role="status">Loading your orders…</p>
+    }
+
+    @if (loadError(); as error) {
+      <div class="order-load-error" role="alert">
+        <span class="body">{{ error }}</span>
+        <button
+          type="button"
+          class="button button--tertiary"
+          (click)="retryLoadOrders()"
+        >
+          Try again
+        </button>
+      </div>
+    }
+
     @if (submittedOrders().length > 0) {
-      <div class="orders-list">
-        <div class="list-header">
-          <h3>Submitted pre-orders</h3>
-
-          <span class="body">
-            You can modify or cancel your pre-orders up to
-            30 minutes before your reserved table time.
-          </span>
-        </div>
-
-        <div>
+      <details class="orders-list order-history">
+        <summary>
+          Order history ({{ submittedOrders().length }})
+        </summary>
+        <span class="body">
+          Previously submitted orders are kept here and are not part of your
+          active cart.
+        </span>
+        <div class="order-history-list">
           @for (
               item of submittedOrders();
             track item.orderId
             ) {
             <app-submitted-order
               [order]="item"
+              [busy]="isOrderBusy(item.orderId)"
               (canceled)="openCancelModal(item.orderId)"
               (edited)="editOrder(item.orderId)"
             />
           }
         </div>
-      </div>
+      </details>
     }
 
-    @if (orders().length === 0) {
+    @if (
+      !loadingOrders() &&
+      !loadError() &&
+      unsubmittedOrders().length === 0
+    ) {
       <div class="empty-cart">
         <img
           src="assets/img/empty-cart.png"

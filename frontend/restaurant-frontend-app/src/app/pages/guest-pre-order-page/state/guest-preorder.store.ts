@@ -66,13 +66,11 @@ export class GuestPreorderStore {
             const ctx = this.contextId();
             if (!ctx) return;
 
-            // IMPORTANT: after submit do not persist anything
-            if (this.status() !== 'active') return;
-
             localStorage.setItem(this.key(ctx, 'guestName'), this.guestName());
             localStorage.setItem(this.key(ctx, 'cart'), JSON.stringify(this.cartItems()));
             localStorage.setItem(this.key(ctx, 'guestSessionId'), this.guestSessionId() ?? '');
             localStorage.setItem(this.key(ctx, 'guestSessionToken'), this.guestSessionToken() ?? '');
+            localStorage.setItem(this.key(ctx, 'status'), this.status());
         });
     }
 
@@ -88,12 +86,16 @@ export class GuestPreorderStore {
 
         const sessionId = localStorage.getItem(this.key(id, 'guestSessionId'));
         const sessionToken = localStorage.getItem(this.key(id, 'guestSessionToken'));
+        const savedStatus = localStorage.getItem(this.key(id, 'status')) as GuestPreorderStatus | null;
 
         if (sessionId) this.guestSessionId.set(sessionId);
         if (sessionToken) this.guestSessionToken.set(sessionToken);
+        if (savedStatus === 'submitted' || savedStatus === 'active') {
+            this.status.set(savedStatus);
+        }
 
         // If guest was already joined on this device/browser, load menu automatically
-        if (this.guestSessionId() && this.guestSessionToken()) {
+        if (this.guestSessionId() && this.guestSessionToken() && this.status() === 'active') {
             void this.loadMenu();
         }
 
@@ -126,6 +128,10 @@ export class GuestPreorderStore {
     }
 
     async join(name: string) {
+        if (this.joinLoading() || (this.guestSessionId() && this.guestSessionToken())) {
+            return;
+        }
+
         const inv = this.invite();
         if (!inv) {
             this.joinError.set('Invite is not loaded yet');
@@ -288,9 +294,37 @@ export class GuestPreorderStore {
     // call this only after API submit success
     submitSuccess() {
         this.status.set('submitted');
+    }
 
-        const ctx = this.contextId();
-        if (ctx) this.clearStorage(ctx);
+    async reopenSubmittedPreorder() {
+        const sessionId = this.guestSessionId();
+        const token = this.guestSessionToken();
+
+        if (!sessionId || !token) {
+            this.cartError.set('Your guest session has expired. Please rejoin the reservation.');
+            return;
+        }
+
+        this.cartBusy.set(true);
+        this.cartError.set(null);
+
+        try {
+            const currentSession = await firstValueFrom(this.guestSessionsService.getGuestSession(sessionId, token));
+            this.guestName.set(currentSession.name || this.guestName());
+            this.cartItems.set((currentSession.items ?? []).map(item => ({
+                dishId: item.dish.id,
+                title: item.dish.name,
+                price: item.dish.price,
+                imageUrl: item.dish.imageUrl ?? undefined,
+                qty: item.quantity,
+            })));
+            this.status.set('active');
+            await this.loadMenu();
+        } catch {
+            this.cartError.set('Could not reopen your pre-order. Please try again.');
+        } finally {
+            this.cartBusy.set(false);
+        }
     }
 
     async createNewPreorder() {

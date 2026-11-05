@@ -8,17 +8,19 @@ import {
 } from '@angular/core';
 
 import { Order } from '@app/models/orders/order.model';
+import { DishImageFallbackDirective } from '@app/shared/directives/dish-image-fallback.directive';
 
 @Component({
   selector: 'app-not-submitted-order',
   standalone: true,
-  imports: [CurrencyPipe],
+  imports: [CurrencyPipe, DishImageFallbackDirective],
   templateUrl: './not-submitted-order.component.html',
   styleUrl: './not-submitted-order.component.scss',
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class NotSubmittedOrderComponent {
   readonly order = input.required<Order>();
+  readonly busy = input(false);
 
   readonly submitted = output<string>();
   readonly addDish = output<void>();

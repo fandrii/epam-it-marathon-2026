@@ -1,140 +1,265 @@
-<main class="group-summary">
-  <a class="back-link" routerLink="/reservations">Back to reservations</a>
-  <header class="summary-header">
-    <div>
-      <h1>Group Pre-Order</h1>
-      <p>Guest orders and individual totals</p>
-    </div>
-    <button
-      type="button"
-      class="button button--secondary"
-      (click)="refreshSnapshot()"
-      [disabled]="isRefreshing() || isDeleting() || !groupReservationId()"
-    >
-      {{ isRefreshing() ? 'Refreshing...' : 'Refresh' }}
-    </button>
-  </header>
-
-  @if (isLoading()) {
-    <p class="state-message" role="status">Loading group pre-order...</p>
-  } @else if (!snapshot() && errorMessage()) {
-    <div class="state-message state-message--error" role="alert">
-      <p>{{ errorMessage() }}</p>
-      <button type="button" class="button button--secondary" (click)="retryLoad()">
-        Try again
-      </button>
-    </div>
-  } @else if (snapshot()) {
-    @if (errorMessage()) {
-      <p class="state-message state-message--error" role="alert">
-        {{ errorMessage() }} Showing the most recently loaded totals.
-      </p>
-    }
-
-    @if (guests().length === 0) {
-      <p class="state-message">No guest participants have joined this group yet.</p>
-    } @else {
-      <section class="participants" aria-label="Guest pre-orders">
-        @for (guest of guests(); track guest.id ?? guest.name) {
-          <article class="participant-card">
-            <header class="participant-header">
-              <div>
-                <h2>{{ guest.name }}</h2>
-                <span
-                  class="submission-status"
-                  [class.submission-status--submitted]="guest.isSubmitted"
-                >
-                  {{ guest.isSubmitted ? 'Submitted' : 'Not Submitted' }}
-                </span>
-              </div>
-              @if (guest.id) {
-                <button
-                  type="button"
-                  class="button button--tertiary"
-                  (click)="requestDelete(guest)"
-                  [disabled]="isDeleting()"
-                >
-                  Delete guest
-                </button>
-              }
-            </header>
-
-            @if (guest.items.length === 0) {
-              <p class="empty-order">No dishes ordered.</p>
-            } @else {
-              <div class="table-scroll">
-                <table>
-                  <thead>
-                    <tr>
-                      <th scope="col">Dish</th>
-                      <th scope="col">Unit price</th>
-                      <th scope="col">Quantity</th>
-                      <th scope="col">Line total</th>
-                    </tr>
-                  </thead>
-                  <tbody>
-                    @for (item of guest.items; track item.dish.id) {
-                      <tr>
-                        <th scope="row">{{ item.dish.name }}</th>
-                        <td>{{ item.dish.price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
-                        <td>{{ item.quantity }}</td>
-                        <td>{{ lineTotal(item) | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
-                      </tr>
-                    }
-                  </tbody>
-                </table>
-              </div>
-            }
-
-            <p class="participant-total">
-              Guest subtotal:
-              <strong>{{ guest.total | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
-            </p>
-          </article>
-        }
-      </section>
-    }
-
-    <footer class="grand-total">
-      <span>Grand total for guests</span>
-      <strong>{{ guestTotal() | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
-    </footer>
-  }
-</main>
-
-@if (deleteConfirmation(); as guest) {
-  <div class="dialog-backdrop">
-    <section
-      class="confirmation-dialog"
-      role="dialog"
-      aria-modal="true"
-      aria-labelledby="delete-guest-title"
-    >
-      <h2 id="delete-guest-title">Delete guest session?</h2>
-      <p>
-        This will remove {{ guest.name }} and their pre-order from the group.
-      </p>
-      @if (deleteError()) {
-        <p class="state-message--error" role="alert">{{ deleteError() }}</p>
-      }
-      <div class="dialog-actions">
+<div
+  class="modal-backdrop"
+  role="presentation"
+  tabindex="-1"
+  (click)="onBackdropClick($event)"
+  (keydown)="onDocumentKeydown($event)"
+>
+  <section
+    #summaryDialog
+    class="summary-dialog"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="group-summary-title"
+    tabindex="-1"
+  >
+    <header class="dialog-header">
+      <div>
+        <h1 id="group-summary-title">{{ modalTitle() }}</h1>
+        <p>{{ modalSubtitle() }}</p>
+      </div>
+      <div class="header-actions">
         <button
           type="button"
-          class="button button--secondary"
-          (click)="cancelDelete()"
-          [disabled]="isDeleting()"
+          class="button button--secondary button--small"
+          (click)="refreshSnapshot()"
+          [disabled]="
+            isRefreshing() ||
+            isDeleting() ||
+            (showOwnerOnly() ? !reservationId() : !groupReservationId())
+          "
         >
-          Cancel
+          {{ isRefreshing() ? 'Refreshing...' : 'Refresh' }}
         </button>
         <button
           type="button"
-          class="button button--tertiary"
-          (click)="confirmDelete()"
-          [disabled]="isDeleting()"
+          class="close-button dialog-initial-focus"
+          aria-label="Close group pre-order"
+          (click)="close()"
         >
-          {{ isDeleting() ? 'Deleting...' : 'Delete guest' }}
+          <img src="assets/svg/close.svg" alt="" aria-hidden="true" width="24" height="24" />
         </button>
       </div>
-    </section>
-  </div>
-}
+    </header>
+
+    <div class="dialog-content">
+      @if (isLoading()) {
+        <p class="state-message" role="status">Loading group pre-order...</p>
+      } @else if (
+        errorMessage() &&
+        (showOwnerOnly() ? !ownerOrdersLoaded() : !snapshot())
+      ) {
+        <div class="state-message state-message--error" role="alert">
+          <p>{{ errorMessage() }}</p>
+          <button
+            type="button"
+            class="button button--secondary button--large"
+            (click)="retryLoad()"
+          >
+            Try again
+          </button>
+        </div>
+      } @else if (snapshot() || (showOwnerOnly() && ownerOrdersLoaded())) {
+        @if (errorMessage()) {
+          <p class="state-message state-message--error" role="alert">
+            {{ errorMessage() }} Showing the most recently loaded totals.
+          </p>
+        }
+
+        @if (showOwnerOnly()) {
+          @if (ownerOrders().length === 0) {
+            <p class="state-message">
+              No submitted owner pre-orders are associated with this reservation.
+            </p>
+          } @else {
+            <section class="participants" aria-label="Owner pre-orders">
+              @for (order of ownerOrders(); track order.orderId) {
+                <article class="participant-card">
+                  <header class="participant-header">
+                    <h2>Owner pre-order #{{ order.orderId }}</h2>
+                    <span
+                      class="submission-status submission-status--submitted"
+                    >
+                      {{ ownerOrderStatus(order.status) }}
+                    </span>
+                  </header>
+
+                  <div class="table-scroll">
+                    <table>
+                      <thead>
+                        <tr>
+                          <th scope="col">Dish</th>
+                          <th scope="col">Unit price</th>
+                          <th scope="col">Quantity</th>
+                          <th scope="col">Subtotal</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        @for (item of order.orderItems; track item.dish.id) {
+                          <tr>
+                            <th scope="row">
+                              <span class="dish-cell">
+                                <img
+                                  class="owner-dish-image"
+                                  [src]="item.dish.imageUrl || 'assets/img/dish.png'"
+                                  appDishImageFallback
+                                  [alt]="item.dish.name"
+                                  width="56"
+                                  height="56"
+                                />
+                                <span>{{ item.dish.name }}</span>
+                              </span>
+                            </th>
+                            <td>
+                              {{ item.dish.price | currency: 'USD' : 'symbol' : '1.2-2' }}
+                            </td>
+                            <td>{{ item.quantity }}</td>
+                            <td>
+                              {{ ownerLineTotal(item) | currency: 'USD' : 'symbol' : '1.2-2' }}
+                            </td>
+                          </tr>
+                        }
+                      </tbody>
+                    </table>
+                  </div>
+
+                  <p class="participant-total">
+                    Order total:
+                    <strong>
+                      {{
+                        ownerOrderTotal(order)
+                          | currency: 'USD' : 'symbol' : '1.2-2'
+                      }}
+                    </strong>
+                  </p>
+                </article>
+              }
+            </section>
+          }
+        } @else {
+          @if (guests().length === 0) {
+            <p class="state-message">No guest participants have joined this group yet.</p>
+          } @else {
+            <section class="participants" aria-label="Guest pre-orders">
+              @for (guest of guests(); track guest.id ?? guest.name) {
+                <article class="participant-card">
+                  <header class="participant-header">
+                    <div>
+                      <h2>{{ guest.name }}</h2>
+                      <span
+                        class="submission-status"
+                        [class.submission-status--submitted]="guest.isSubmitted"
+                      >
+                        {{ guest.isSubmitted ? 'Submitted' : 'Not Submitted' }}
+                      </span>
+                    </div>
+                    @if (guest.id) {
+                      <button
+                        type="button"
+                        class="button button--tertiary button--small"
+                        (click)="requestDelete(guest)"
+                        [disabled]="isDeleting()"
+                      >
+                        Remove guest
+                      </button>
+                    }
+                  </header>
+
+                  @if (guest.items.length === 0) {
+                    <p class="empty-order">No dishes ordered.</p>
+                  } @else {
+                    <div class="table-scroll">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th scope="col">Dish</th>
+                            <th scope="col">Unit price</th>
+                            <th scope="col">Quantity</th>
+                            <th scope="col">Line total</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          @for (item of guest.items; track item.dish.id) {
+                            <tr>
+                              <th scope="row">
+                                <span class="dish-cell">
+                                  <img
+                                    class="owner-dish-image"
+                                    [src]="item.dish.imageUrl || 'assets/img/dish.png'"
+                                    appDishImageFallback
+                                    [alt]="item.dish.name"
+                                    width="56"
+                                    height="56"
+                                  />
+                                  <span>{{ item.dish.name }}</span>
+                                </span>
+                              </th>
+                              <td>{{ item.dish.price | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+                              <td>{{ item.quantity }}</td>
+                              <td>{{ lineTotal(item) | currency: 'USD' : 'symbol' : '1.2-2' }}</td>
+                            </tr>
+                          }
+                        </tbody>
+                      </table>
+                    </div>
+                  }
+
+                  <p class="participant-total">
+                    Guest subtotal:
+                    <strong>{{ guest.total | currency: 'USD' : 'symbol' : '1.2-2' }}</strong>
+                  </p>
+                </article>
+              }
+            </section>
+          }
+        }
+
+        <footer class="grand-total">
+          <span>{{ showOwnerOnly() ? 'Owner total' : 'Grand total for guests' }}</span>
+          <strong>
+            {{
+              (showOwnerOnly() ? ownerOrdersTotal() : guestTotal())
+                | currency: 'USD' : 'symbol' : '1.2-2'
+            }}
+          </strong>
+        </footer>
+      }
+    </div>
+
+    @if (deleteConfirmation(); as guest) {
+      <div class="confirmation-backdrop">
+        <section
+          class="delete-confirmation"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="delete-guest-title"
+          tabindex="-1"
+        >
+          <h2 id="delete-guest-title">Remove guest session?</h2>
+          <p>This will remove {{ guest.name }} and their pre-order from the group.</p>
+          @if (deleteError()) {
+            <p class="state-message--error" role="alert">{{ deleteError() }}</p>
+          }
+          <div class="dialog-actions">
+            <button
+              type="button"
+              class="button button--secondary button--large dialog-initial-focus"
+              (click)="cancelDelete()"
+              [disabled]="isDeleting()"
+            >
+              Keep guest
+            </button>
+            <button
+              type="button"
+              class="button button--primary button--large"
+              (click)="confirmDelete()"
+              [disabled]="isDeleting()"
+            >
+              {{ isDeleting() ? 'Removing...' : 'Remove guest' }}
+            </button>
+          </div>
+        </section>
+      </div>
+    }
+  </section>
+</div>

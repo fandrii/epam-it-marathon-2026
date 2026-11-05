@@ -11,7 +11,8 @@
         <div class="order-item-dish">
           <img
             class="dish-image"
-            [src]="item.dish.imageUrl"
+            [src]="item.dish.imageUrl || 'assets/img/dish.png'"
+            appDishImageFallback
             [alt]="item.dish.name"
             width="96"
             height="96"
@@ -28,6 +29,7 @@
                   type="button"
                   class="icon-button icon-button--small"
                   [attr.aria-label]="'Remove ' + item.dish.name"
+                  [disabled]="busy()"
                   (click)="removeDishFromOrder(item.dish.id)"
                 >
                   <img
@@ -46,7 +48,7 @@
                     type="button"
                     class="icon-button icon-button--small"
                     aria-label="Decrease quantity"
-                    [disabled]="item.quantity <= 1"
+                    [disabled]="busy() || item.quantity <= 1"
                     (click)="decrementItemQuantity(item.dish.id)"
                   >
                     <img
@@ -64,6 +66,7 @@
                     type="button"
                     class="icon-button icon-button--small"
                     aria-label="Increase quantity"
+                    [disabled]="busy()"
                     (click)="incrementItemQuantity(item.dish.id)"
                   >
                     <img
@@ -87,6 +90,7 @@
         <button
           type="button"
           class="button button--tertiary button--large add-dish-btn"
+          [disabled]="busy()"
           (click)="addDishToOrder()"
         >
           <img
@@ -111,6 +115,7 @@
   <button
     type="button"
     class="button button--primary button--large submit-btn"
+    [disabled]="busy()"
     (click)="submit()"
   >
     Submit Pre-order

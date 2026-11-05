@@ -54,3 +54,27 @@
   display: flex;
   width: 100%;
 }
+
+.invite-link-block {
+  display: grid;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.invite-link-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.invite-link-field {
+  padding: 10px 12px;
+  border: 1px solid color.$neutral-200;
+  border-radius: 8px;
+  background: color.$neutral-100;
+  color: color.$neutral-900;
+  word-break: break-all;
+  font-size: 12px;
+  line-height: 18px;
+}

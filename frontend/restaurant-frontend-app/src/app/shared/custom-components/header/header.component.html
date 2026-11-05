@@ -58,11 +58,6 @@
           </div>
         }
 
-        @if (showCart()) {
-          <div>
-            <app-cart (closeCartEvent)="toggleCart()"></app-cart>
-          </div>
-        }
       }
 
       @if (user()?.role === Roles.WAITER) {

@@ -7,7 +7,9 @@ using APIHandler.Helpers;
 using APIHandler.Mappers;
 using APIHandler.Models.Reservations;
 using APIHandler.Models.Users;
+using APIHandler.Repositories.GroupReservations;
 using APIHandler.Services.Locations;
+using APIHandler.Services.Reservations;
 using System;
 using System.Linq;
 using System.Text.Json;
@@ -23,11 +25,19 @@ public class EditReservationHandler : IApiRequestHandler
 
     private readonly IDynamoDBContext _dbContext;
     private readonly ILocationService _locationService;
+    private readonly IReservationService _reservationService;
+    private readonly IGroupReservationRepository _groupReservationRepository;
 
-    public EditReservationHandler(IDynamoDBContext dbContext, ILocationService locationService)
+    public EditReservationHandler(
+        IDynamoDBContext dbContext,
+        ILocationService locationService,
+        IReservationService reservationService,
+        IGroupReservationRepository groupReservationRepository)
     {
         _dbContext = dbContext ?? throw new ArgumentNullException(nameof(dbContext));
         _locationService = locationService ?? throw new ArgumentNullException(nameof(locationService));
+        _reservationService = reservationService ?? throw new ArgumentNullException(nameof(reservationService));
+        _groupReservationRepository = groupReservationRepository ?? throw new ArgumentNullException(nameof(groupReservationRepository));
     }
 
     public async Task<APIGatewayProxyResponse> HandleRequest(APIGatewayProxyRequest request, ILambdaContext context)
@@ -91,10 +101,9 @@ public class EditReservationHandler : IApiRequestHandler
         reservation.EndTime = editRequest.EndTime;
         reservation.GuestCount = editRequest.GuestCount;
 
-        var saveError = await TrySaveReservationAsync(reservation);
-        if (saveError != null)
+        if (!await _reservationService.UpdateReservationAsync(reservation))
         {
-            context.Logger.LogError($"[ERROR] Failed to save reservation: {saveError}");
+            context.Logger.LogError($"[ERROR] Failed to save reservation: {reservation.Id}");
             return ResponseBuilder.CreateErrorResponse(500, "Failed to save reservation", context.Logger);
         }
 
@@ -104,7 +113,22 @@ public class EditReservationHandler : IApiRequestHandler
             return ResponseBuilder.CreateErrorResponse(404, "Location not foun.d", context.Logger);
         }
 
-        var response = ReservationMapper.ToReservationResponse(reservation, location.Address);
+        bool hasGroupReservation = false;
+        bool guestInviteLinkAvailable = false;
+        if (reservation.GuestCount >= 2)
+        {
+            var groupReservation = await _groupReservationRepository.GetByReservationIdAsync(reservation.Id);
+            hasGroupReservation = groupReservation is not null;
+            guestInviteLinkAvailable =
+                reservation.Status == ReservationStatus.Reserved &&
+                groupReservation?.Status == GroupReservationStatus.Open;
+        }
+
+        var response = ReservationMapper.ToReservationResponse(
+            reservation,
+            location.Address,
+            guestInviteLinkAvailable: guestInviteLinkAvailable,
+            hasGroupReservation: hasGroupReservation);
         return ResponseBuilder.CreateSuccessResponse(response);
     }
 
@@ -152,20 +176,6 @@ public class EditReservationHandler : IApiRequestHandler
             Math.Abs((startTime2 - endTime1).TotalMinutes) < differenceMinutes;
 
         return overlap || closeEnough;
-    }
-
-    private async Task<string?> TrySaveReservationAsync(Reservation reservation)
-    {
-        try
-        {
-            var saveConfig = DynamoConfig.SaveConfig(ReservationsTableName);
-            await _dbContext.SaveAsync(reservation, saveConfig);
-            return null;
-        }
-        catch (Exception ex)
-        {
-            return ex.Message;
-        }
     }
 
     private async Task<Location?> TryGetLocationAsync(string tableId)

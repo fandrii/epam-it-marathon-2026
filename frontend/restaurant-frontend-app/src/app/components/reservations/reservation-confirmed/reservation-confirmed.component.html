@@ -93,6 +93,31 @@
       </p>
     </div>
 
+    @if (showInviteField()) {
+      <div class="invite-field">
+        <label class="invite-label" for="reservation-confirmed-invite-link">Invite Link</label>
+        <div class="invite-input">
+          <input
+            id="reservation-confirmed-invite-link"
+            type="text"
+            readonly
+            [placeholder]="invitePlaceholder()"
+            [value]="inviteLink() ?? ''"
+          />
+          <button
+            type="button"
+            class="icon-button icon-button--small"
+            aria-label="Copy invite link"
+            [disabled]="!inviteLink()"
+            (click)="onCopyInviteLink()"
+          >
+            <img src="assets/svg/copy.svg" alt="" />
+          </button>
+        </div>
+        <p class="invite-hint">Share this link with guests to join the reservation.</p>
+      </div>
+    }
+
     <div class="confirmed-buttons">
       <app-custom-button
         type="button"

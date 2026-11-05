@@ -10,9 +10,11 @@ import {
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
 import { Router } from '@angular/router';
+import { finalize, Observable } from 'rxjs';
 
 import { Order } from '@app/models/orders/order.model';
 import { PreOrdersService } from '@app/services/pre-orders/pre-orders.service';
+import { ToastService } from '@app/services/toast/toast.service';
 
 import { CancelOrderModalComponent } from './components/cancel-order-modal/cancel-order-modal.component';
 import { NotSubmittedOrderComponent } from './components/not-submitted-order/not-submitted-order.component';
@@ -38,13 +40,18 @@ export class CartComponent implements OnInit {
 
   private readonly router = inject(Router);
   private readonly destroyRef = inject(DestroyRef);
+  private readonly toast = inject(ToastService);
 
   readonly closeCartEvent = output<void>();
 
   readonly orders = signal<Order[]>([]);
+  readonly loadingOrders = signal(false);
+  readonly loadError = signal<string | null>(null);
+  readonly busyOrderIds = signal<ReadonlySet<string>>(new Set());
 
   readonly cancelOrderId = signal<string | null>(null);
   readonly submitOrderId = signal<string | null>(null);
+  private loadRequestId = 0;
 
   readonly submittedOrders = computed(() =>
     this.orders().filter(
@@ -106,6 +113,14 @@ export class CartComponent implements OnInit {
     void this.router.navigate(['/reservations']);
   }
 
+  isOrderBusy(orderId: string): boolean {
+    return this.busyOrderIds().has(orderId);
+  }
+
+  retryLoadOrders(): void {
+    this.loadOrders();
+  }
+
   cancelOrder(orderId: string): void {
     const order = this.findOrder(orderId);
 
@@ -113,21 +128,18 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    this.preOrdersService
-      .cancelPreOrderByReservationId(order.reservationId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
+    this.runOrderOperation(
+      orderId,
+      'cancel',
+      () =>
+        this.preOrdersService.cancelPreOrderByReservationId(
+          order.reservationId,
+        ),
+      () => {
           this.closeCancelModal();
           this.loadOrders();
-        },
-        error: (error) => {
-          console.error(
-            `Error cancelling order ${orderId}:`,
-            error,
-          );
-        },
-      });
+      },
+    );
   }
 
   editOrder(orderId: string): void {
@@ -137,20 +149,17 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    this.preOrdersService
-      .unsubmitPreOrderByReservationId(order.reservationId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
+    this.runOrderOperation(
+      orderId,
+      'edit',
+      () =>
+        this.preOrdersService.unsubmitPreOrderByReservationId(
+          order.reservationId,
+        ),
+      () => {
           this.loadOrders();
-        },
-        error: (error) => {
-          console.error(
-            `Error un-submitting order ${orderId}:`,
-            error,
-          );
-        },
-      });
+      },
+    );
   }
 
   submitOrder(orderId: string): void {
@@ -160,26 +169,41 @@ export class CartComponent implements OnInit {
       return;
     }
 
-    this.preOrdersService
-      .submitPreOrderByReservationId(order.reservationId)
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
-          this.submitOrderId.set(orderId);
-          this.loadOrders();
-        },
-        error: (error) => {
-          console.error(
-            `Error submitting order ${orderId}:`,
-            error,
+    this.runOrderOperation(
+      orderId,
+      'submit',
+      () =>
+        this.preOrdersService.submitPreOrderByReservationId(
+          order.reservationId,
+        ),
+      () => {
+          this.orders.update((orders) =>
+            orders.map((item) =>
+              item.orderId === orderId
+                ? { ...item, status: 3 }
+                : item,
+            ),
           );
-        },
-      });
+          this.submitOrderId.set(orderId);
+      },
+    );
   }
 
   addDishToOrder(orderId: string): void {
-    console.log(`Adding a dish to order ${orderId}`);
-    void this.router.navigate(['/menu']);
+    const order = this.findOrder(orderId);
+
+    if (!order) {
+      return;
+    }
+
+    this.closeCart();
+    void this.router.navigate(['/menu'], {
+      queryParams: {
+        preOrder: true,
+        reservationId: order.reservationId,
+        reservationLabel: order.reservationAddress,
+      },
+    });
   }
 
   updateDishQuantity(
@@ -209,23 +233,18 @@ export class CartComponent implements OnInit {
       ),
     };
 
-    this.preOrdersService
-      .editPreOrderByReservationId(
-        updatedOrder.reservationId,
-        updatedOrder,
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
+    this.runOrderOperation(
+      orderId,
+      'update',
+      () =>
+        this.preOrdersService.editPreOrderByReservationId(
+          updatedOrder.reservationId,
+          updatedOrder,
+        ),
+      () => {
           this.loadOrders();
-        },
-        error: (error) => {
-          console.error(
-            `Error updating item ${itemId}:`,
-            error,
-          );
-        },
-      });
+      },
+    );
   }
 
   removeDishFromOrder(
@@ -245,23 +264,18 @@ export class CartComponent implements OnInit {
       ),
     };
 
-    this.preOrdersService
-      .editPreOrderByReservationId(
-        updatedOrder.reservationId,
-        updatedOrder,
-      )
-      .pipe(takeUntilDestroyed(this.destroyRef))
-      .subscribe({
-        next: () => {
+    this.runOrderOperation(
+      orderId,
+      'update',
+      () =>
+        this.preOrdersService.editPreOrderByReservationId(
+          updatedOrder.reservationId,
+          updatedOrder,
+        ),
+      () => {
           this.loadOrders();
-        },
-        error: (error) => {
-          console.error(
-            `Error removing item ${itemId}:`,
-            error,
-          );
-        },
-      });
+      },
+    );
   }
 
   private findOrder(orderId: string): Order | undefined {
@@ -277,17 +291,81 @@ export class CartComponent implements OnInit {
   }
 
   private loadOrders(): void {
+    const requestId = ++this.loadRequestId;
+    this.loadingOrders.set(true);
+    this.loadError.set(null);
+
     this.preOrdersService
       .getPreOrders()
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
         next: (orders) => {
-          this.orders.set(orders);
+          if (requestId === this.loadRequestId) {
+            this.orders.set(orders);
+          }
         },
         error: (error) => {
           console.error('Error loading orders:', error);
-          this.orders.set([]);
+          if (requestId === this.loadRequestId) {
+            this.loadError.set(
+              'Your orders could not be loaded. Please try again.',
+            );
+            this.loadingOrders.set(false);
+          }
+        },
+        complete: () => {
+          if (requestId === this.loadRequestId) {
+            this.loadingOrders.set(false);
+          }
         },
       });
+  }
+
+  private runOrderOperation(
+    orderId: string,
+    operation: string,
+    request: () => Observable<unknown>,
+    onSuccess: () => void,
+  ): void {
+    if (this.isOrderBusy(orderId)) {
+      return;
+    }
+
+    this.setOrderBusy(orderId, true);
+    request()
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.setOrderBusy(orderId, false)),
+      )
+      .subscribe({
+        next: () => {
+          onSuccess();
+        },
+        error: (error) => {
+          console.error(`Error ${operation}ing order ${orderId}:`, error);
+          const action = {
+            cancel: 'canceled',
+            edit: 'edited',
+            submit: 'submitted',
+            update: 'updated',
+          }[operation] ?? operation;
+          this.toast.error(
+            `The order could not be ${action}. Please try again.`,
+            'Error',
+          );
+        },
+      });
+  }
+
+  private setOrderBusy(orderId: string, busy: boolean): void {
+    this.busyOrderIds.update((current) => {
+      const updated = new Set(current);
+      if (busy) {
+        updated.add(orderId);
+      } else {
+        updated.delete(orderId);
+      }
+      return updated;
+    });
   }
 }

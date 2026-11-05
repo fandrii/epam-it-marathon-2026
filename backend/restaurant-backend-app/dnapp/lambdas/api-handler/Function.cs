@@ -31,7 +31,7 @@ public partial class Function
 
         if (method == HttpMethods.OPTIONS)
         {
-            return ResponseBuilder.CreateOptionsResponse();
+            return ResponseBuilder.ApplyCorsHeaders(ResponseBuilder.CreateOptionsResponse(request.Headers?["Origin"]), request);
         }
 
         context.Logger.LogLine($"Received request: {method} {path}");
@@ -51,16 +51,18 @@ public partial class Function
 
                     try
                     {
-                        return await handler.Handler.HandleRequest(request, context);
+                        var response = await handler.Handler.HandleRequest(request, context);
+                        return ResponseBuilder.ApplyCorsHeaders(response, request);
                     }
                     catch (Exception exception)
                     {
-                        return ExceptionHandler.Handle(exception, context);
+                        var response = ExceptionHandler.Handle(exception, context);
+                        return ResponseBuilder.ApplyCorsHeaders(response, request);
                     }
                 }
             }
         }
 
-        return ResponseBuilder.CreateErrorResponse(404, "Not Found", context.Logger);
+        return ResponseBuilder.ApplyCorsHeaders(ResponseBuilder.CreateErrorResponse(404, "Not Found", context.Logger), request);
     }
 }

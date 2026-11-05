@@ -21,14 +21,16 @@
   <section class="info-section">
     @if (isPreOrderEnabled) {
       <div class="pre-order-notice">
-        You are making a pre-order for a reservation <strong>{{ preOrderReservationLabel }}</strong
-        >.
+        <p>
+          You are making a pre-order for a reservation
+          <strong>{{ preOrderReservationLabel }}</strong>.
+        </p>
       </div>
     }
   </section>
 
   <section class="content-sections">
-    <div class="menu-section">
+    <div class="menu-section" id="pre-order-dishes">
       <div class="filter-sort-bar">
         <div class="category-buttons">
           @for (category of menuCategories; track category) {
@@ -58,6 +60,7 @@
           <app-dish-card
             [dish]="dish"
             [preOrderEnabled]="isPreOrderEnabled"
+            [preOrderBusy]="isAddingDish()"
             (dishClicked)="openModal(dish)"
             (preOrderClicked)="addDishToCart(dish)"
             maxWidth="288px"

@@ -123,3 +123,42 @@ h3 {
   letter-spacing: 0;
   vertical-align: middle;
 }
+
+.invite-link-block {
+  display: grid;
+  gap: 12px;
+  margin-top: -8px;
+}
+
+.invite-link-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.copy-link-btn {
+  border: 1px solid rgba(19, 113, 73, 0.2);
+  background: color.$neutral-0;
+  color: color.$green-600;
+  border-radius: 999px;
+  padding: 0.4rem 0.8rem;
+  cursor: pointer;
+  font-weight: 500;
+}
+
+.copy-link-btn:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+.invite-link-field {
+  padding: 12px 14px;
+  border: 1px solid color.$neutral-200;
+  border-radius: 12px;
+  background: color.$neutral-100;
+  color: color.$neutral-900;
+  word-break: break-all;
+  font-size: 13px;
+  line-height: 20px;
+}

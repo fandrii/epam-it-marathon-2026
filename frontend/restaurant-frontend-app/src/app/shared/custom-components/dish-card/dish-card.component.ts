@@ -4,6 +4,7 @@ import { DishListResponse } from '@app/models/dishes/dish-list-response.model';
 import { DishState } from '@app/models/enums/dish-state.model';
 import { DishStateLabels } from '@app/shared/mappers/dish-enum.mapper';
 import {CustomButtonComponent} from '@app/shared/custom-components/custom-button/custom-button.component';
+import { DishImageFallbackDirective } from '@app/shared/directives/dish-image-fallback.directive';
 
 @Component({
   selector: 'app-dish-card',
@@ -11,12 +12,13 @@ import {CustomButtonComponent} from '@app/shared/custom-components/custom-button
   styleUrls: ['./dish-card.component.scss'],
   standalone: true,
   changeDetection: ChangeDetectionStrategy.Eager,
-  imports: [CommonModule, CustomButtonComponent],
+  imports: [CommonModule, CustomButtonComponent, DishImageFallbackDirective],
 })
 export class DishCardComponent {
   readonly dish = input.required<DishListResponse>();
   readonly maxWidth = input('');
   readonly preOrderEnabled = input(false);
+  readonly preOrderBusy = input(false);
 
   readonly dishClicked = output<void>();
   readonly preOrderClicked = output<void>();

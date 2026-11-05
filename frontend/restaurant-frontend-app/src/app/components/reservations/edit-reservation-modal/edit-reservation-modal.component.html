@@ -39,6 +39,29 @@
     />
   </div>
 
+  @if (showInviteLink()) {
+    <div class="invite-link-block">
+      <div class="invite-link-header">
+        <span class="field-label">Invitation link</span>
+        <button type="button" class="button button--secondary button--small" (click)="onCopyInviteLink()" [disabled]="inviteLoading() || !inviteLink()">
+          {{ inviteLoading() ? 'Loading...' : 'Copy Link' }}
+        </button>
+      </div>
+
+      <div class="invite-link-field" aria-live="polite">
+        @if (inviteLoading()) {
+          <span>Loading link...</span>
+        } @else if (inviteFailed()) {
+          <span>Link is unavailable</span>
+        } @else if (inviteLink()) {
+          <span>{{ inviteLink() }}</span>
+        } @else {
+          <span>Link will be available soon</span>
+        }
+      </div>
+    </div>
+  }
+
   <p class="note">
     Need more time or want to make changes?<br />
     Give us a call at +123 445 678 8990.

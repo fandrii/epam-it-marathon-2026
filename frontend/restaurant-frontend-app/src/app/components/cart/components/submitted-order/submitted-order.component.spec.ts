@@ -23,6 +23,8 @@ describe('SubmittedOrderComponent', () => {
         state: 1,
         dish: {
           id: 'dish-1',
+          name: 'Dish with image',
+          imageUrl: 'https://images.example.test/dish-1.jpg',
           price: 10,
         },
       },
@@ -74,5 +76,14 @@ describe('SubmittedOrderComponent', () => {
 
   it('should exclude rejected items from total price', () => {
     expect(component.totalPrice()).toBe(20);
+  });
+
+  it('shows the corresponding dish image in order history and falls back if it fails', () => {
+    const image = fixture.nativeElement.querySelector('.dish-image') as HTMLImageElement;
+    expect(image.getAttribute('src')).toBe('https://images.example.test/dish-1.jpg');
+
+    image.dispatchEvent(new Event('error'));
+
+    expect(image.getAttribute('src')).toBe('assets/img/dish.png');
   });
 });

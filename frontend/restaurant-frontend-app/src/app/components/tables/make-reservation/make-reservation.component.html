@@ -67,6 +67,29 @@
       </div>
     </div>
 
+    @if (title === 'Edit Reservation' && guestInviteLinkAvailable && guests >= 2) {
+      <div class="invite-link-block">
+        <div class="invite-link-header">
+          <h3>Invitation link</h3>
+          <button type="button" class="copy-link-btn" (click)="copyInviteLink()" [disabled]="inviteLoading() || !inviteLink()">
+            {{ inviteLoading() ? 'Loading...' : 'Copy Link' }}
+          </button>
+        </div>
+
+        <div class="invite-link-field" aria-live="polite">
+          @if (inviteLoading()) {
+            <span>Loading link...</span>
+          } @else if (inviteError()) {
+            <span>Link is unavailable</span>
+          } @else if (inviteLink()) {
+            <span>{{ inviteLink() }}</span>
+          } @else {
+            <span>Link will be available soon</span>
+          }
+        </div>
+      </div>
+    }
+
     <app-custom-button (click)="onMakeReservation()">{{ title }}</app-custom-button>
   </div>
 </div>

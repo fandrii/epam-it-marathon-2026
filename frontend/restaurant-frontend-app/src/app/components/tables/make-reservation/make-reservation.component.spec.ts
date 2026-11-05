@@ -1,4 +1,6 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
+import { HttpClientTestingModule } from '@angular/common/http/testing';
+import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
 
 import { MakeReservationComponent } from './make-reservation.component';
 
@@ -8,7 +10,8 @@ describe('MakeReservationComponent', () => {
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      imports: [MakeReservationComponent],
+      imports: [MakeReservationComponent, HttpClientTestingModule],
+      providers: [{ provide: API_BASE_URL, useValue: 'https://test.api' }],
     }).compileComponents();
 
     fixture = TestBed.createComponent(MakeReservationComponent);

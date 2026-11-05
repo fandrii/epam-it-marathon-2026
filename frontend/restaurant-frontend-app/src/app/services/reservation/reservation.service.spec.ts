@@ -58,4 +58,15 @@ describe('ReservationService', () => {
       req.flush({});
     });
   });
+
+  describe('getReservationFeedback', () => {
+    it('skips the global toast for optional feedback requests', () => {
+      service.getReservationFeedback('reservation-1').subscribe();
+
+      const req = httpMock.expectOne('https://test.api/reservations/reservation-1/feedback');
+      expect(req.request.method).toBe('GET');
+      expect(req.request.context.get(SKIP_ERROR_TOAST)).toBeTrue();
+      req.flush({});
+    });
+  });
 });

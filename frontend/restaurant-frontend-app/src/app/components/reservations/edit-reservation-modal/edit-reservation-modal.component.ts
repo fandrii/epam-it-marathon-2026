@@ -3,9 +3,11 @@ import {
   ChangeDetectionStrategy,
   Component,
   computed,
+  inject,
   input,
   linkedSignal,
   output,
+  signal,
 } from '@angular/core';
 import { Table } from '@app/models/tables/table.model';
 import { TimeRange } from '@app/models/tables/time-range.model';
@@ -21,6 +23,8 @@ import {
 } from '@app/shared/helpers/date-helpers';
 import { STAY_DURATION_OPTIONS } from './constants';
 import { ReservationDraftChanges } from './models';
+import { GuestInviteService } from '@app/services/reservation/guest-invite.service';
+import { ToastService } from '@app/services/toast/toast.service';
 
 @Component({
   selector: 'app-edit-reservation-modal',
@@ -35,9 +39,16 @@ export class EditReservationModalComponent {
   readonly table = input.required<Table>();
   readonly timeRange = input.required<TimeRange>();
   readonly guests = input.required<number>();
+  readonly reservationId = input<string | null>(null);
+  readonly guestInviteLinkAvailable = input(false);
 
   readonly closed = output<void>();
   readonly saveChanges = output<ReservationDraftChanges>();
+  private readonly guestInviteService = inject(GuestInviteService);
+  private readonly toastService = inject(ToastService);
+  readonly inviteLink = signal<string | null>(null);
+  readonly inviteLoading = signal(false);
+  readonly inviteFailed = signal(false);
 
   protected readonly durationOptions = STAY_DURATION_OPTIONS;
   private readonly durationValues = STAY_DURATION_OPTIONS.map((option) => Number(option.value));
@@ -66,6 +77,40 @@ export class EditReservationModalComponent {
   protected readonly selectedDurationOption = computed(() =>
     this.durationOptions.find((option) => Number(option.value) === this.selectedDuration())
   );
+
+  protected readonly showInviteLink = computed(
+    () => this.guests() >= 2 && this.guestInviteLinkAvailable() && !!this.reservationId()
+  );
+
+  ngOnInit(): void {
+    if (this.showInviteLink()) {
+      this.inviteLoading.set(true);
+      this.guestInviteService.getInviteToken$(this.reservationId()!).subscribe({
+        next: ({ token }) => {
+          this.inviteLink.set(token ? `${window.location.origin}/join/${token}` : null);
+          this.inviteLoading.set(false);
+        },
+        error: () => {
+          this.inviteFailed.set(true);
+          this.inviteLoading.set(false);
+        },
+      });
+    }
+  }
+
+  async onCopyInviteLink(): Promise<void> {
+    const link = this.inviteLink();
+    if (!link) {
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(link);
+      this.toastService.success('Share it with your friends.', 'Link copied!');
+    } catch {
+      this.toastService.error('Could not copy the link. Please copy it manually.');
+    }
+  }
 
   onClose(): void {
     this.closed.emit();

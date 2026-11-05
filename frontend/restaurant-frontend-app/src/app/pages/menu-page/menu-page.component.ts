@@ -1,4 +1,6 @@
-import {Component, OnInit, ChangeDetectionStrategy, inject} from '@angular/core';
+import {Component, OnInit, ChangeDetectionStrategy, DestroyRef, inject, signal} from '@angular/core';
+import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
+import { finalize } from 'rxjs';
 import { DishCardComponent } from '@app/shared/custom-components/dish-card/dish-card.component';
 import { DishesService } from '@app/services/dishes/dishes.service';
 import { DishListResponse } from '@app/models/dishes/dish-list-response.model';
@@ -26,11 +28,13 @@ import {ToastService} from '@app/services/toast/toast.service';
   providers: [DishesService],
 })
 export class MenuPageComponent implements OnInit {
+  private readonly destroyRef = inject(DestroyRef);
   private toast = inject(ToastService);
   dishes: DishListResponse[] = [];
   filteredDishes: DishListResponse[] = [];
 
   isPreOrderEnabled = false;
+  readonly isAddingDish = signal(false);
   preOrderReservationId?: string;
   preOrderReservationLabel?: string;
 
@@ -51,15 +55,24 @@ export class MenuPageComponent implements OnInit {
   ngOnInit(): void {
     this.route.queryParams.subscribe((params) => {
       const preOrder = params['preOrder'];
-      this.isPreOrderEnabled = !!preOrder;
+      const reservationId = params['reservationId'];
+      const isPreOrderRequested =
+        preOrder === true || preOrder === 'true' || preOrder === '1';
+      this.isPreOrderEnabled =
+        isPreOrderRequested &&
+        typeof reservationId === 'string' &&
+        reservationId.trim().length > 0;
       if (this.isPreOrderEnabled) {
-        this.preOrderReservationId = params['reservationId'];
+        this.preOrderReservationId = reservationId;
         this.preOrderReservationLabel = params['reservationLabel'];
-        if (!this.preOrderReservationId) {
-          console.error('Pre-order is enabled but no reservation ID provided.');
-          this.toast.error('Pre-order is enabled but no reservation ID provided.', 'Error');
-          this.isPreOrderEnabled = false;
-        }
+      } else {
+        this.preOrderReservationId = undefined;
+        this.preOrderReservationLabel = undefined;
+      }
+
+      if (isPreOrderRequested && !this.isPreOrderEnabled) {
+        console.error('Pre-order is enabled but no reservation ID provided.');
+        this.toast.error('Pre-order is enabled but no reservation ID provided.', 'Error');
       }
 
       const category = params['category'] as DishType;
@@ -139,8 +152,17 @@ export class MenuPageComponent implements OnInit {
   }
 
   addDishToCart(dish: DishListResponse): void {
+    if (!this.isPreOrderEnabled || !this.preOrderReservationId || this.isAddingDish()) {
+      return;
+    }
+
+    this.isAddingDish.set(true);
     this.orderService
-      .addDishToPreOrderByReservationId(this.preOrderReservationId!, dish, 1)
+      .addDishToPreOrderByReservationId(this.preOrderReservationId, dish, 1)
+      .pipe(
+        takeUntilDestroyed(this.destroyRef),
+        finalize(() => this.isAddingDish.set(false)),
+      )
       .subscribe({
         next: () => {
           this.toast.success('Dish added to cart successfully!', 'Success');

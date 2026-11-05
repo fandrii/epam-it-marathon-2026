@@ -2,20 +2,23 @@ import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { Router } from '@angular/router';
 import { CardReservationComponent } from './card-reservation.component';
 import { API_BASE_URL } from '@app/shared/config/api-base-url.token';
-import { ReservationCustomer, ReservationStatusCustomer } from '@app/models/reservations/reservation.model';
+import {
+  ReservationCustomer,
+  ReservationStatusCustomer,
+} from '@app/models/reservations/reservation.model';
 import { Roles } from '@app/shared/constants/roles';
 
 describe('CardReservationComponent', () => {
   let component: CardReservationComponent;
   let fixture: ComponentFixture<CardReservationComponent>;
-  let navigate: jasmine.Spy;
+  let viewGroupPreOrder: string | undefined;
 
   beforeEach(async () => {
-    navigate = jasmine.createSpy('navigate');
+    viewGroupPreOrder = undefined;
     await TestBed.configureTestingModule({
       providers: [
         { provide: API_BASE_URL, useValue: 'https://test.api' },
-        { provide: Router, useValue: { navigate } },
+        { provide: Router, useValue: { navigate: jasmine.createSpy('navigate') } },
       ],
       imports: [CardReservationComponent],
     }).compileComponents();
@@ -31,16 +34,19 @@ describe('CardReservationComponent', () => {
   });
 
   it('shows the group pre-order action only for group reservations', () => {
-    expect(
-      fixture.nativeElement.querySelector('button')?.textContent
-    ).toContain('View Group Pre-Order');
+    expect(fixture.nativeElement.querySelector('button')?.textContent).toContain(
+      'View Group Pre-Order'
+    );
 
     fixture.componentRef.setInput('r', makeReservation(false));
     fixture.detectChanges();
     expect(fixture.nativeElement.textContent).not.toContain('View Group Pre-Order');
   });
 
-  it('navigates to the summary for the selected group reservation', () => {
+  it('emits the selected group reservation to open its summary modal', () => {
+    component.viewGroupPreOrder.subscribe((reservationId) => {
+      viewGroupPreOrder = reservationId;
+    });
     const buttons = Array.from(
       fixture.nativeElement.querySelectorAll('button') as NodeListOf<HTMLButtonElement>
     );
@@ -54,11 +60,7 @@ describe('CardReservationComponent', () => {
     }
 
     button.click();
-    expect(navigate).toHaveBeenCalledWith([
-      '/reservations',
-      'reservation-1',
-      'group-pre-order',
-    ]);
+    expect(viewGroupPreOrder).toBe('reservation-1');
   });
 
   it('does not show the group pre-order action to non-customer roles', () => {
@@ -66,6 +68,30 @@ describe('CardReservationComponent', () => {
     fixture.detectChanges();
 
     expect(fixture.nativeElement.textContent).not.toContain('View Group Pre-Order');
+  });
+
+  it('navigates to the owner pre-order menu for capacities one, two, and three', () => {
+    const navigate = TestBed.inject(Router).navigate as jasmine.Spy;
+
+    for (const guestCount of [1, 2, 3]) {
+      fixture.componentRef.setInput('r', {
+        ...makeReservation(false),
+        guestCount,
+      });
+
+      component.onPreOrder();
+
+      const [commands, extras] = navigate.calls.mostRecent().args;
+      expect(commands).toEqual(['/menu']);
+      expect(extras?.queryParams).toEqual(
+        jasmine.objectContaining({
+          preOrder: 'true',
+          reservationId: 'reservation-1',
+        })
+      );
+    }
+
+    expect(navigate).toHaveBeenCalledTimes(3);
   });
 
   function makeReservation(hasGroupReservation: boolean): ReservationCustomer {

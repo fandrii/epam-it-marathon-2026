@@ -42,6 +42,7 @@ export interface ReservationCustomer {
   waiterId: string;
   hasSubmittedPreOrder?: boolean;
   hasGroupReservation?: boolean;
+  guestInviteLinkAvailable?: boolean;
   preOrder?: Order;
   preOrders?: Order[];
   createdByName?: string;

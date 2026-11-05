@@ -57,8 +57,13 @@
             <strong class="total-value">{{ total() | currency: '$' }}</strong>
         </div>
 
-        <app-custom-button variant="secondary" fullWidth (click)="createNew.emit()">
-            Create New Pre-Order
-        </app-custom-button>
+        <div class="actions">
+            <app-custom-button variant="primary" fullWidth class="edit-order-btn" (click)="editOrder.emit()">
+                Edit Order
+            </app-custom-button>
+            <app-custom-button variant="secondary" fullWidth class="close-order-btn" (click)="closeRequested.emit()">
+                Close
+            </app-custom-button>
+        </div>
     </div>
 </div>

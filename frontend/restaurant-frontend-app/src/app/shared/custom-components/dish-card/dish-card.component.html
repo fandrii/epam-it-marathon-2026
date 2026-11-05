@@ -11,7 +11,12 @@
     @if (isUnavailable()) {
       <div class="status-badge">{{ dishStateLabel() }}</div>
     }
-    <img [src]="dish().imageUrl" alt="{{ dish().name }}" class="dish-image" />
+    <img
+      [src]="dish().imageUrl || 'assets/img/dish.png'"
+      appDishImageFallback
+      [alt]="dish().name"
+      class="dish-image"
+    />
     <div class="dish-info">
       <div class="dish-heading">
         <div class="dish-name">{{ dish().name }}</div>
@@ -21,11 +26,15 @@
         </div>
       </div>
       @if (preOrderEnabled()) {
-        <app-custom-button size="small" fullWidth [disabled]="isUnavailable()" (click)="preOrderClicked.emit()">
-          Pre-Order
+        <app-custom-button
+          size="small"
+          fullWidth
+          [disabled]="isUnavailable() || preOrderBusy()"
+          (click)="preOrderClicked.emit()"
+        >
+          Add to Pre-Order
         </app-custom-button>
       }
     </div>
     <ng-content select="[dish-footer]"></ng-content>
   </div>
-
